@@ -207,13 +207,18 @@ pub fn anthropic_to_openai_with_reasoning_content(
             .iter()
             .filter(|t| t.get("type").and_then(|v| v.as_str()) != Some("BatchTool"))
             .map(|t| {
+                let mut function = json!({
+                    "name": t.get("name").and_then(|n| n.as_str()).unwrap_or(""),
+                    "parameters": clean_schema(t.get("input_schema").cloned().unwrap_or(json!({})))
+                });
+                if let Some(desc) = t.get("description") {
+                    if !desc.is_null() {
+                        function["description"] = desc.clone();
+                    }
+                }
                 let mut tool = json!({
                     "type": "function",
-                    "function": {
-                        "name": t.get("name").and_then(|n| n.as_str()).unwrap_or(""),
-                        "description": t.get("description"),
-                        "parameters": clean_schema(t.get("input_schema").cloned().unwrap_or(json!({})))
-                    }
+                    "function": function
                 });
                 if let Some(cc) = t.get("cache_control") {
                     tool["cache_control"] = cc.clone();

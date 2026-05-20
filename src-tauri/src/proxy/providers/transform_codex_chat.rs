@@ -327,9 +327,13 @@ fn responses_tool_to_chat_tool(tool: &Value) -> Option<Value> {
 
     let mut function = json!({
         "name": tool.get("name").and_then(|v| v.as_str()).unwrap_or(""),
-        "description": tool.get("description").cloned().unwrap_or(Value::Null),
         "parameters": tool.get("parameters").cloned().unwrap_or_else(|| json!({}))
     });
+    if let Some(desc) = tool.get("description") {
+        if !desc.is_null() {
+            function["description"] = desc.clone();
+        }
+    }
     if let Some(strict) = tool.get("strict") {
         function["strict"] = strict.clone();
     }

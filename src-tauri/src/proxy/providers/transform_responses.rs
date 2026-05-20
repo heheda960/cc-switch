@@ -119,14 +119,19 @@ pub fn anthropic_to_responses(
             .iter()
             .filter(|t| t.get("type").and_then(|v| v.as_str()) != Some("BatchTool"))
             .map(|t| {
-                json!({
+                let mut tool = json!({
                     "type": "function",
                     "name": t.get("name").and_then(|n| n.as_str()).unwrap_or(""),
-                    "description": t.get("description"),
                     "parameters": super::transform::clean_schema(
                         t.get("input_schema").cloned().unwrap_or(json!({}))
                     )
-                })
+                });
+                if let Some(desc) = t.get("description") {
+                    if !desc.is_null() {
+                        tool["description"] = desc.clone();
+                    }
+                }
+                tool
             })
             .collect();
 
